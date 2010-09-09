@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html manifest="app.manifest">
+<head>
+    <title>Chat</title>
+    <style>
+html, body {margin: 0;padding: 0;width:100%;height:100%;}
+body {
+    background-color: #000000;
+}
+#container {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    height: auto;
+    width: 768px;
+    left: 50%;
+    margin-left: -384px;
+    background-color: #FFFFFF;
+    font-family: 'Courier';
+    font-size: 24px;
+}
+#chats {
+    width: 100%;
+    max-height: 82%;
+    list-style: none;    
+    padding: 0;
+    background-color: #FFFFFF;
+    overflow: hidden;
+    overflow-y: scroll;
+}
+#chats .chat {
+    border-bottom: thin solid silver;
+}
+#chats .chat span.user {
+    color: #AA0909;
+    font-wieght: bold;
+}
+#chats .chat span.message {
+    margin-left: 3px;
+}
+#chats .chat.remote {
+    background-color: #FFFFEE;
+}
+#chats .information {
+    color: #ACEECA;
+    font-size: 12px;
+}
+#imchat {
+    margin-top: 0;
+    height: 30px;
+    position: relative;
+    bottom: 0px;
+}
+#im {
+    width: 800px;
+    margin-left: -25px;
+    text-align: left;
+    border: none;
+    background-color: #EFEFEF;
+    color: #000000;
+    font-family: 'Courier';
+    font-size: 22px;
+    padding: 10px;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+#im:focus {
+    outline: none;
+}
+    </style>
+    <script src="javascripts/socket.io.js" type="text/javascript" charset="utf-8"></script>
+    <script>io.setPath('/');</script>
+    <script>
+const HOST = "arunjitsingh.dyndns.org",
+    PORT   = 9202;
+var socket;
+var applicationDidLoad = function() {
+    if ('undefined'===typeof(io)) {
+        throw new Error("Application failed to load: Socket.IO not found");
+    }    
+    socket = new io.Socket(HOST, {port:PORT});
+    
+    socket.on('message', didReceiveData);
+    
+    socket.connect();
+    
+    var username = prompt("Enter a username: ");
+    if (username && username != "") {
+        socket.send("USERNAME:"+username);
+    }
+    //alert("Connected to "+HOST);
+};
+
+var didReceiveData = function(data) {
+    if ("string"===typeof(data)) {
+        data = JSON.parse(data);
+    }
+    return renderChatData(data);
+};
+
+var sendData = function() {
+    var doc = document,
+        elt = doc.getElementById('im'),
+        msg = elt.value;
+    if (msg) {
+        socket.send(msg);
+        renderChatData({message:msg});
+        elt.value = "";
+    }
+    elt.focus();
+};
+
+var renderChatData = function(data) {
+    var doc     = document,
+        chatBox = doc.getElementById('chats');
+    
+    var renderMessage = function(message) {
+        var chatMsg = message.message,
+            chatUsr = (message.username || message.user),
+            chatElt = doc.createElement('li');
+        chatElt.setAttribute('class', 'chat');
+        
+        if (chatUsr) {
+            chatElt.setAttribute('class', 'chat remote');
+            var usrElt = doc.createElement('span');
+            usrElt.setAttribute('class', 'user');
+            usrElt.innerHTML = chatUsr + ": ";
+            chatElt.appendChild(usrElt);
+        }
+        var msgElt = doc.createElement('span');
+        msgElt.setAttribute('class', 'message');
+        msgElt.innerHTML = chatMsg;
+        chatElt.appendChild(msgElt);
+        return chatElt;
+    };
+    
+    if (data && data.message) {        
+        chatBox.appendChild(renderMessage(data));
+    } else if (data && data.messages) {
+        var fragment = doc.createDocumentFragment(),
+            messages = data.messages,
+            count    = messages.length,
+            i = -1;
+        while (count > ++i) {
+            var message = messages[i];
+            fragment.appendChild(renderMessage(message));
+        }
+        chatBox.appendChild(fragment);        
+    } else if (data && data.announcement) {
+        var chatInfo = data.announcement,
+            infoElt  = doc.createElement('li');
+        infoElt.setAttribute('class', 'information');
+        infoElt.innerHTML = chatInfo;
+        chatBox.appendChild(infoElt);
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+};
+
+    </script>
+</head>
+<body onload="applicationDidLoad();">
+<div id="container">
+    <ul id="chats">
+    </ul>
+    <form id="imchat" onsubmit="sendData(); return false;">
+        <input type="text" id="im" value="">
+    </form>
+</div>
+</body>
+</html>
