@@ -1,171 +1,198 @@
 <!DOCTYPE html>
 <html manifest="app.manifest">
 <head>
-    <title>Chat</title>
-    <style>
+  <title>Chat</title>
+  <style type="text/css">
 html, body {margin: 0;padding: 0;width:100%;height:100%;}
+h1, h2, h3 {margin: 0;padding: 0;}
+a {text-decoration: none}
 body {
-    background-color: #000000;
+  background-color: #000000;
+}
+hgroup#header {
+  display: block;
+  position: absolute;
+  top: 5px;
+  width: 768px;
+  left: 50%;
+  margin-left: -384px;
+  height: 105px;
+  font-family: 'Courier';
+  background-color: #808080;
+  text-align: center;
 }
 #container {
-    position: absolute;
-    top: 5px;
-    bottom: 5px;
-    height: auto;
-    width: 768px;
-    left: 50%;
-    margin-left: -384px;
-    background-color: #FFFFFF;
-    font-family: 'Courier';
-    font-size: 24px;
+  position: absolute;
+  top: 115px;
+  bottom: 5px;
+  height: auto;
+  width: 768px;
+  left: 50%;
+  margin-left: -384px;
+  background-color: #FFFFFF;
+  font-family: 'Courier';
+  font-size: 24px;
 }
 #chats {
-    width: 100%;
-    max-height: 82%;
-    list-style: none;    
-    padding: 0;
-    background-color: #FFFFFF;
-    overflow: hidden;
-    overflow-y: scroll;
+  width: 100%;
+  max-height: 82%;
+  list-style: none;    
+  padding: 0;
+  background-color: #FFFFFF;
+  overflow: hidden;
+  overflow-y: scroll;
 }
 #chats .chat {
-    border-bottom: thin solid silver;
+  border-bottom: thin solid silver;
 }
 #chats .chat span.user {
-    color: #AA0909;
-    font-wieght: bold;
+  color: #AA0909;
+  font-wieght: bold;
 }
 #chats .chat span.message {
-    margin-left: 3px;
+  margin-left: 3px;
 }
 #chats .chat.remote {
-    background-color: #FFFFEE;
+  background-color: #FFFFEE;
 }
 #chats .information {
-    color: #ACEECA;
-    font-size: 12px;
+  color: #ACEECA;
+  font-size: 12px;
 }
 #imchat {
-    margin-top: 0;
-    height: 30px;
-    position: relative;
-    bottom: 0px;
+  margin-top: 0;
+  height: 30px;
+  position: relative;
+  bottom: 0px;
 }
 #im {
-    width: 800px;
-    margin-left: -25px;
-    text-align: left;
-    border: none;
-    background-color: #EFEFEF;
-    color: #000000;
-    font-family: 'Courier';
-    font-size: 22px;
-    padding: 10px;
-    border-radius: 5px;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
+  width: 800px;
+  margin-left: -25px;
+  text-align: left;
+  border: none;
+  background-color: #EFEFEF;
+  color: #000000;
+  font-family: 'Courier';
+  font-size: 22px;
+  padding: 10px;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
 }
 #im:focus {
-    outline: none;
+  outline: none;
 }
-    </style>
+  </style>
 </head>
 <body onload="applicationDidLoad();">
-<div id="container">
+  <hgroup id="header">
+    <h1>SOCKET-CHAT</h1>
+    <h2>Using <a href="http://nodejs.org">Node.JS</a> and WebSockets through <a href="http://socket.io">Socket.IO</a></h2>
+    <h3>Experimental application. Open <a href="http://github.com/arunjitsingh/socket-chat">Source</a>!</h3>
+  </hgroup>
+  <div id="container">
     <ul id="chats">
     </ul>
     <form id="imchat" onsubmit="sendData(); return false;">
-        <input type="text" id="im" value="">
+      <input type="text" id="im" value="">
     </form>
-</div>
-<script src="javascripts/socket.io.js" type="text/javascript" charset="utf-8"></script>
-<script>io.setPath('/');</script>
-<script>
+  </div>
+  
+  
+  <script src="javascripts/socket.io.js" type="text/javascript" charset="utf-8"></script>
+  <script>io.setPath('/');</script>
+  <script type="text/javascript">
+
 const HOST = "localhost",
-PORT   = 9202;
+    PORT   = 9202;
 var socket;
 var applicationDidLoad = function() {
-if ('undefined'===typeof(io)) {
+  if ('undefined'===typeof(io)) {
     throw new Error("Application failed to load: Socket.IO not found");
-}    
-socket = new io.Socket(HOST, {port:PORT});
+  }    
+  socket = new io.Socket(HOST, {port:PORT});
 
-socket.on('message', didReceiveData);
+  socket.on('message', didReceiveData);
 
-socket.connect();
+  socket.connect();
 
-var username = prompt("Enter a username: ");
-if (username && username != "") {
+  var username = prompt("Enter a username: ");
+  if (username && username != "") {
     socket.send("USERNAME:"+username);
-}
-//alert("Connected to "+HOST);
+  }
+  //alert("Connected to "+HOST);
 };
 
 var didReceiveData = function(data) {
-if ("string"===typeof(data)) {
+  if ("string"===typeof(data)) {
     data = JSON.parse(data);
-}
-return renderChatData(data);
+  }
+  return renderChatData(data);
 };
 
 var sendData = function() {
-var doc = document,
-    elt = doc.getElementById('im'),
-    msg = elt.value;
-if (msg) {
+  var doc = document,
+      elt = doc.getElementById('im'),
+      msg = elt.value;
+  if (msg) {
     socket.send(msg);
     renderChatData({message:msg});
     elt.value = "";
-}
-elt.focus();
+  }
+  elt.focus();
 };
 
 var renderChatData = function(data) {
-var doc     = document,
-    chatBox = doc.getElementById('chats');
+  var doc     = document,
+      chatBox = doc.getElementById('chats');
 
-var renderMessage = function(message) {
+  var renderMessage = function(message) {
     var chatMsg = message.message,
         chatUsr = (message.username || message.user),
         chatElt = doc.createElement('li');
     chatElt.setAttribute('class', 'chat');
-    
+
     if (chatUsr) {
-        chatElt.setAttribute('class', 'chat remote');
-        var usrElt = doc.createElement('span');
-        usrElt.setAttribute('class', 'user');
-        usrElt.innerHTML = chatUsr + ": ";
-        chatElt.appendChild(usrElt);
+      chatElt.setAttribute('class', 'chat remote');
+      var usrElt = doc.createElement('span');
+      usrElt.setAttribute('class', 'user');
+      usrElt.innerHTML = chatUsr + ": ";
+      chatElt.appendChild(usrElt);
     }
     var msgElt = doc.createElement('span');
     msgElt.setAttribute('class', 'message');
     msgElt.innerHTML = chatMsg;
     chatElt.appendChild(msgElt);
     return chatElt;
-};
+  };
 
-if (data && data.message) {        
+  if (data && data.message) {        
     chatBox.appendChild(renderMessage(data));
-} else if (data && data.messages) {
+  } else if (data && data.messages) {
     var fragment = doc.createDocumentFragment(),
         messages = data.messages,
         count    = messages.length,
         i = -1;
     while (count > ++i) {
-        var message = messages[i];
-        fragment.appendChild(renderMessage(message));
+      var message = messages[i];
+      fragment.appendChild(renderMessage(message));
     }
     chatBox.appendChild(fragment);        
-} else if (data && data.announcement) {
+  } else if (data && data.announcement) {
     var chatInfo = data.announcement,
         infoElt  = doc.createElement('li');
     infoElt.setAttribute('class', 'information');
     infoElt.innerHTML = chatInfo;
     chatBox.appendChild(infoElt);
-}
-chatBox.scrollTop = chatBox.scrollHeight;
+  } else if (data && data.userlist && data.userlist.length) {
+    var userlist = data.userlist,
+        infoElt  = doc.createElement('li');
+    infoElt.setAttribute('class', 'information');
+    infoElt.innerHTML = "Users: " + userlist.join(", ");
+    chatBox.appendChild(infoElt);
+  }
+  chatBox.scrollTop = chatBox.scrollHeight;
 };
-
-</script>
+  </script>
 </body>
 </html>
