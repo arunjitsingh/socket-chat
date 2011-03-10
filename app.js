@@ -1,4 +1,4 @@
-require.paths.unshift(__dirname + '/lib');
+//require.paths.unshift(__dirname + '/lib');
 
 var io = require('socket.io'),
   http = require('http');
@@ -7,28 +7,14 @@ var fs = require('fs'),
   util = require('util');
 
 var url = require('url'),
-  path = require('path');
+  path = require('path'),
+  mime = require('mime');
 
 function findType(uri) {
-  var types = {
-    '.js':      'text/javascript',
-    '.html':    'text/html',
-    '.css':     'text/css',
-    '.manifest':'text/cache-manifest',
-    '.ico':     'image/x-icon',
-    '.jpeg':    'image/jpeg',
-    '.jpg':     'image/jpg',
-    '.png':     'image/png',
-    '.gif':     'image/gif',
-    '.svg':     'image/svg+xml'
-  };
-
   var ext = uri.match(/\.\w+$/gi);
   if (ext && ext.length > 0) {
-    ext = ext[0].toLowerCase();
-    if (ext in types) {
-      return types[ext];
-    }
+    ext = ext[0].split(".")[1].toLowerCase();
+    return mime.lookup(ext);
   }
   return undefined;
 }
@@ -41,7 +27,12 @@ function sendError(code, response) {
 
 var app = http.createServer(function(request, response) {
   var uri = url.parse(request.url).pathname;
-  if (uri === '/') {uri = '/index.html';}
+  if (uri === '/') {
+    uri = '/index.html';
+  } else if (uri === '/app.js') {
+    sendError(404, response);
+    return;
+  }
   var _file = path.join(process.cwd(), uri);
 
   path.exists(_file, function(exists) {
@@ -68,6 +59,8 @@ var app = http.createServer(function(request, response) {
   });
 
 });
+
+
 
 var socket = io.listen(app, {transports:['websocket', 'xhr-polling']}),
   buffer = [],
@@ -103,7 +96,7 @@ socket.on('connection', function(client) {
       console.log(client.sessionId + " = " + client.username);
       client.send(json({messages:buffer}));
       client.send(json({userlist:usernames}));
-      client.send(json({announcement:"Connected!"}));
+      client.send(json({announcement:"Connected! Hello, " + username + "!"}));
 
       clients.push(client);
       return;
